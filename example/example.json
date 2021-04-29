@@ -1,0 +1,53 @@
+{
+    "del-generated-svgs": true,
+    "build-path": "generated",
+    "inkscape-args": [
+        "--export-overwrite",
+        "--export-area-page",
+        "--export-type=png",
+        "--export-dpi=200",
+        "--export-background=#ffffff",
+        "--export-background-opacity=255"
+    ],
+    "im-convert": true,
+    "im-convert-format": "jpg",
+    "im-convert-args": [
+        "-resize", "2000",
+        "-strip",
+        "-flatten",
+        "-quality", "85%",
+        "-define", "webp:lossless=true"
+    ],
+    "always-include": [
+        "ground",
+        "sky"
+    ],
+    "generate": {
+        "path": [
+            "path"
+        ],
+        "path-sun": [
+            "path",
+            "sun"
+        ],
+        "path-sun-mirage": [
+            "path",
+            "sun",
+            "mirage"
+        ],
+        "sun-mirage": [
+            "sun",
+            "mirage"
+        ]
+   },
+    "generate-standalone": {
+        "welcome-screen": [
+            "welcome",
+            "sun"
+        ],
+        "the-end-screen": [
+            "the-end",
+            "path"
+        ]
+    }
+}
