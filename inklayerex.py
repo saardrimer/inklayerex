@@ -8,10 +8,10 @@
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -24,6 +24,7 @@ import json
 import subprocess
 import argparse
 import re
+import copy
 from pathlib import Path
 from lxml import etree as et
 from typing import Dict, Any
@@ -74,6 +75,13 @@ def replace_or_add_style_prop(style_str, prop_name, new_prop_value):
     return style_str
 
 
+def get_prop_value(style_str, prop_name):
+    """Get the property value from a style string"""
+    search_str = f"\s*?{prop_name}\s*?:\s*?([-\w]*)"
+    re_result = re.findall(search_str, style_str)
+    return re_result[0]
+
+
 def reset_visibility(layers_l: list) -> None:
     """Hide all layers in the input list"""
     for layer in layers_l:
@@ -82,7 +90,7 @@ def reset_visibility(layers_l: list) -> None:
         layer.set(f"style", style_str)
 
 
-def set_visibility(layers_l: list, set_l: list) -> None:
+def set_visibility(layers_l: list, set_l: list) -> list:
     """Make layers in 'layers_l' with name that's in 'set_l' visible"""
     for layer in layers_l:
         if layer.get(f"{{{NS_INK}}}label") in set_l:
@@ -93,6 +101,17 @@ def set_visibility(layers_l: list, set_l: list) -> None:
 
 def save_svg_file(svg_data: et, f: Path) -> None:
     f.write_text(et.tostring(svg_data, encoding="unicode", pretty_print=True))
+
+
+def del_invisible_layers(svg_data):
+    """Remove all layers that are set to not be displayed"""
+    layers_l = get_all_layers(svg_data)
+    for layer in layers_l:
+        style_str = layer.get("style")
+        prop = get_prop_value(style_str, "display")
+        if prop == "none":
+            layer.getparent().remove(layer)
+    return svg_data
 
 
 def main():
@@ -113,6 +132,9 @@ def main():
     build_path.mkdir(parents=True, exist_ok=True)
 
     inkscape_args = cfg_d.get("inkscape-args", "")  # Inkscape arguments
+    del_layers = cfg_d.get(
+        "del-invisible-layers-on-save", False
+    )  # delete the invisible layers?
     del_svgs = cfg_d.get("del-generated-svgs", False)  # delete generated SVGs?
     im_convert = cfg_d.get("im-convert", False)  # convert further with `convert`?
     im_convert_format = cfg_d.get("im-convert-format", "jpg").lstrip(".")  # img format?
@@ -133,14 +155,18 @@ def main():
     # delete SVG if defined;
     # run `convert` for further conversion if defined
     for name, set_l in gen_d.items():
-        svg_file = build_path / f"{name}.svg"
+        svg_file_out = build_path / f"{name}.svg"
         reset_visibility(layers_l)
         set_visibility(layers_l, set_l)
-        save_svg_file(svg_data, svg_file)
-        command = ["inkscape"] + inkscape_args + [str(svg_file)]
+        if del_layers is True:
+            svg_data_save = del_invisible_layers(copy.deepcopy(svg_data))
+        else:
+            svg_data_save = svg_data
+        save_svg_file(svg_data_save, svg_file_out)
+        command = ["inkscape"] + inkscape_args + [str(svg_file_out)]
         subprocess.run(command)  # run 'inkscape' command
         if del_svgs is True:
-            svg_file.unlink(missing_ok=True)  # delete file
+            svg_file_out.unlink(missing_ok=True)  # delete file
         if im_convert is True:
             infile = build_path / f"{name}.png"
             outfile = build_path / f"{name}.{im_convert_format}"

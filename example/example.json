@@ -1,5 +1,6 @@
 {
-    "del-generated-svgs": true,
+    "del-invisible-layers-on-save": true,
+    "del-generated-svgs": false,
     "build-path": "generated",
     "inkscape-args": [
         "--export-overwrite",

@@ -23,6 +23,7 @@ The following is `example.json` that's included in this repository.
 
 ```
 {
+    "del-invisible-layers-on-save": false, # delete invisible layers before saving SVG?
     "del-generated-svgs": true, # delete the intermediate SVGs?
     "build-path": "generated", # path for where to place generated files
     "inkscape-args": [ # arguments switches for Inkscape (see 'inkscape --help')
